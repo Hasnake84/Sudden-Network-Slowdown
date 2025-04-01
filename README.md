@@ -15,13 +15,31 @@ I noticed a significant network performance degradation on some of the older dev
   - DeviceNetworkEvents
   - DeviceFileEvents
   - DeviceProcessEvents
-
+- **Test-NetConnection (PowerShell): ongoing PowerShell cmdlet for network testing.**
+<a href="https://imgur.com/qphSE1X"><img src="https://i.imgur.com//qphSE1X.png" tB2TqFcLitle="source: imgur.com" /></a>
+  
 ## **Incident Summary and Findings**
 
-```kql
-DeviceFileEvents
-| order by Timestamp desc 
-| take 10
+kql
+DeviceNetworkEvents
+| where ActionType == "ConnectionFailed"
+| summarize FailedConnectionsAttempts = count() by DeviceName, ActionType, LocalIP, RemoteIP
+| order by FailedConnectionsAttempts desc
+
+## By using the above query we see that our VM **port-scanner-vm was found failing several connection requests against two other hosts on the same network.**
+
+<a href="https://imgur.com/V72MMqB"><img src="https://i.imgur.com//V72MMqB.png" tB2TqFcLitle="source: imgur.com" /></a>
+ 
+let VMName = "port-scanner-vm";
+DeviceProcessEvents
+| where DeviceName == VMName
+| where InitiatingProcessCommandLine contains "portscan"
+| order by Timestamp desc
+| project Timestamp, FileName, InitiatingProcessCommandLine
+
+<a href="https://imgur.com/cpMU65l"><img src="https://i.imgur.com//cpMU65l.png" tB2TqFcLitle="source: imgur.com" /></a>
+
+## We observed the port scan script was launched by AccountName 'henoks'. This is not expected behavior and it is not something that was setup by the admins. I isolated the device and ran a malware scan. The malware scan produced no results, so out of caution, following SOP I kept the device isolated and with senior analyst approval i put in a ticket to have it re-image/rebuilt. 
 
 DeviceNetworkEvents
 | order by Timestamp desc 
@@ -33,7 +51,7 @@ DeviceProcessEvents
 ```
 
 ### **Timeline Overview**
-1. **Windows-target-1 was found failing several connection requests against itself and another host on the same network.**
+1. **port-scanner-vm was found failing several connection requests against and other hosts on the same network.**
 
    **Detection Query (KQL):**
    ```kql

@@ -1,19 +1,19 @@
 ## **Sudden Network Slowdown Incident**
 
-# Incident Investigation Report
+## **Incident Investigation Report**
 
 ## **Scenario:**
 I noticed a significant network performance degradation on some of the older devices attached to the network in the `10.0.0.0/16` network. After ruling out external DDoS attacks, the security team suspects something might be going on internally. All traffic originating from within the local network is by default allowed by all hosts. There is also unrestricted use of PowerShell and other applications in the environment. It’s possible someone is either downloading large files or doing some kind of port scanning against hosts in the local network.
 
 ---
 ## **Objectives**
-Gather relevant data from logs, network traffic, and endpoints.
-Consider inspecting the logs for excessive successful/failed connections from any devices.  If discovered, pivot and inspect those devices for any suspicious file or process events.
-Activity: Ensure data is available from all key sources for analysis.
-Ensure the relevant tables contain recent logs:
-DeviceNetworkEvents
-DeviceFileEvents
-DeviceProcessEvents
+- Gather relevant data from logs, network traffic, and endpoints.
+- Consider inspecting the logs for excessive successful/failed connections from any devices.  If discovered, pivot and inspect those devices for any suspicious file or process events.
+- Ensure data is available from all key sources for analysis.
+- Ensure the relevant tables contain recent logs:
+  - DeviceNetworkEvents
+  - DeviceFileEvents
+  - DeviceProcessEvents
 
 ## **Incident Summary and Findings**
 

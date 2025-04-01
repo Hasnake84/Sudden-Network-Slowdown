@@ -1,22 +1,21 @@
-# Sudden-Network-Slowdown
-## **🎯Sudden Network Slowdowns Incident**
+## **Sudden Network Slowdown Incident**
 
 # Incident Investigation Report
 
-## 📚 **Scenario:**
+## **Scenario:**
 I noticed a significant network performance degradation on some of the older devices attached to the network in the `10.0.0.0/16` network. After ruling out external DDoS attacks, the security team suspects something might be going on internally. All traffic originating from within the local network is by default allowed by all hosts. There is also unrestricted use of PowerShell and other applications in the environment. It’s possible someone is either downloading large files or doing some kind of port scanning against hosts in the local network.
 
 ---
-
-## 📊 **Incident Summary and Findings**
-
-Goal: Gather relevant data from logs, network traffic, and endpoints.
+## **Objectives**
+Gather relevant data from logs, network traffic, and endpoints.
 Consider inspecting the logs for excessive successful/failed connections from any devices.  If discovered, pivot and inspect those devices for any suspicious file or process events.
 Activity: Ensure data is available from all key sources for analysis.
 Ensure the relevant tables contain recent logs:
 DeviceNetworkEvents
 DeviceFileEvents
 DeviceProcessEvents
+
+## **Incident Summary and Findings**
 
 ```kql
 DeviceFileEvents
@@ -33,7 +32,7 @@ DeviceProcessEvents
 ```
 
 ### **Timeline Overview**
-1. **🔍 Windows-target-1 was found failing several connection requests against itself and another host on the same network.**
+1. **Windows-target-1 was found failing several connection requests against itself and another host on the same network.**
 
    **Detection Query (KQL):**
    ```kql
@@ -46,7 +45,7 @@ DeviceProcessEvents
 ![Screenshot 2025-01-06 104150](https://github.com/user-attachments/assets/2eb708ed-7191-4219-b1a8-7fd416eee0c2)
 
 
-2. **⚙️ Process Analysis:**
+2. **Process Analysis:**
    - **Observed Behavior:** After observing failed connection requests from a suspected host (`10.0.0.5`) in chronological order, I noticed a port scan was taking place due to the sequential order of the ports. There were several port scans being conducted.
 
    **Detection Query (KQL):**
@@ -61,7 +60,7 @@ DeviceProcessEvents
 
    
 
-3. **🌐 Network Check:**
+3. **Network Check:**
    - **Observed Behavior:** I pivoted to the `DeviceProcessEvents` table to see if we could see anything that was suspicious around the time the port scan started. We noticed a PowerShell script named `portscan.ps1` launched at `2025-01-06T06:37:00.774381Z`.
 
    **Detection Query (KQL):**
@@ -76,7 +75,7 @@ DeviceProcessEvents
 ```
 ![Screenshot 2025-01-13 161326](https://github.com/user-attachments/assets/ad26dcfb-2c43-4674-8a14-f926415d9ee6)
 
-5. **📝 Response:**
+5. **Response:**
    - We observed the port scan script was launched by the SYSTEM account. This is not expected behavior and it is not something that was setup by the admins. I isolated the device and ran a malware scan. The malware scan produced no results, so out of caution, I kept the device isolated and put in a ticket to have it re-image/rebuilt. Shared findings with the manager, highlighting automated archive creation. Awaiting further instructions.
  
 
@@ -107,9 +106,3 @@ DeviceProcessEvents
 5. Execute the KQL query in the MDE advanced hunting to confirm detection.
 
 ---
-
-
-
-
-
--

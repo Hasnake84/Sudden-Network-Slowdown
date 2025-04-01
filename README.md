@@ -5,8 +5,9 @@
 ## **Scenario:**
 I noticed a significant network performance degradation on some of the older devices attached to the network in the `10.0.0.0/16` network. After ruling out external DDoS attacks, the security team suspects something might be going on internally. All traffic originating from within the local network is by default allowed by all hosts. There is also unrestricted use of PowerShell and other applications in the environment. It’s possible someone is either downloading large files or doing some kind of port scanning against hosts in the local network.
 
----
 ## **Objectives**
+- Run a Powershell script on our VM to scan the local network using Powershell script containing a file name **portscan.ps1**
+  - Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/joshmadakor1/lognpacific-public/refs/heads/main/cyber-range/entropy-gorilla/portscan.ps1' -OutFile 'C:\programdata\portscan.ps1';cmd /c powershell.exe -ExecutionPolicy Bypass -File C:\programdata\portscan.ps1
 - Gather relevant data from logs, network traffic, and endpoints.
 - Consider inspecting the logs for excessive successful/failed connections from any devices.  If discovered, pivot and inspect those devices for any suspicious file or process events.
 - Ensure data is available from all key sources for analysis.
@@ -38,7 +39,7 @@ DeviceProcessEvents
    ```kql
    DeviceNetworkEvents
    | where ActionType == "ConnectionFailed"
-   | summarize ConnectionCount = count() by DeviceName, ActionType, LocalIP
+   | summarize ConnectionCount = count() by DeviceName, ActionType, LocalIP, RemoteIP
    | order by ConnectionCount
    ```
 

@@ -20,80 +20,47 @@ I noticed a significant network performance degradation on some of the older dev
   
 ## **Incident Summary and Findings**
 
-kql
+```kql
 DeviceNetworkEvents
 | where ActionType == "ConnectionFailed"
 | summarize FailedConnectionsAttempts = count() by DeviceName, ActionType, LocalIP, RemoteIP
 | order by FailedConnectionsAttempts desc
-
-## By using the above query we see that our VM **port-scanner-vm was found failing several connection requests against two other hosts on the same network.**
+```
+### By using the above query we see that our VM **port-scanner-vm** was found failing several connection requests against two other hosts on the same network.
 
 <a href="https://imgur.com/V72MMqB"><img src="https://i.imgur.com//V72MMqB.png" tB2TqFcLitle="source: imgur.com" /></a>
- 
+## Detail:
+<a href="https://imgur.com/AtEpCJh"><img src="https://i.imgur.com//AtEpCJh.png" tB2TqFcLitle="source: imgur.com" /></a>
+
+```kql
 let VMName = "port-scanner-vm";
 DeviceProcessEvents
 | where DeviceName == VMName
 | where InitiatingProcessCommandLine contains "portscan"
 | order by Timestamp desc
 | project Timestamp, FileName, InitiatingProcessCommandLine
-
-<a href="https://imgur.com/cpMU65l"><img src="https://i.imgur.com//cpMU65l.png" tB2TqFcLitle="source: imgur.com" /></a>
-
-## We observed the port scan script was launched by AccountName 'henoks'. This is not expected behavior and it is not something that was setup by the admins. I isolated the device and ran a malware scan. The malware scan produced no results, so out of caution, following SOP I kept the device isolated and with senior analyst approval i put in a ticket to have it re-image/rebuilt. 
-
-DeviceNetworkEvents
-| order by Timestamp desc 
-| take 10
-
-DeviceProcessEvents
-| order by Timestamp desc 
-| take 10
 ```
+## We observed the port scan script was launched by AccountName 'henoks'. This is not expected behavior and it is not something that was setup by the admins. I isolated the device and ran a malware scan. The malware scan produced no results, so out of caution, following SOP I kept the device isolated and with senior analyst approval i put in a ticket to have workstation re-image/rebuilt. 
+<a href="https://imgur.com/1tcE368"><img src="https://i.imgur.com//1tcE368.png" tB2TqFcLitle="source: imgur.com" /></a>
 
 ### **Timeline Overview**
-1. **port-scanner-vm was found failing several connection requests against and other hosts on the same network.**
-
-   **Detection Query (KQL):**
-   ```kql
-   DeviceNetworkEvents
-   | where ActionType == "ConnectionFailed"
-   | summarize ConnectionCount = count() by DeviceName, ActionType, LocalIP, RemoteIP
-   | order by ConnectionCount
-   ```
-
-![Screenshot 2025-01-06 104150](https://github.com/user-attachments/assets/2eb708ed-7191-4219-b1a8-7fd416eee0c2)
-
-
+1. **port-scanner-vm was found failing several connection requests against two other hosts on the same network.**
 2. **Process Analysis:**
-   - **Observed Behavior:** After observing failed connection requests from a suspected host (`10.0.0.5`) in chronological order, I noticed a port scan was taking place due to the sequential order of the ports. There were several port scans being conducted.
+   - After observing failed connection requests from a suspected host (`10.0.1.120`) in chronological order, I noticed a port scan was taking place due to the sequential order of the ports. There were several port scans being conducted.
 
    **Detection Query (KQL):**
    ```kql
-   let IPInQuestion = "10.0.0.5";
+   let IPInQuestion = "10.0.1.120";
    DeviceNetworkEvents
    | where ActionType == "ConnectionFailed"
    | where LocalIP == IPInQuestion
    | order by Timestamp desc
    ```
-![Screenshot 2025-01-06 110119](https://github.com/user-attachments/assets/0a413b76-a739-4779-ac8a-aa3cd4a8ff9e)
-
-   
-
+<a href="https://imgur.com/95u1al2"><img src="https://i.imgur.com//95u1al2.png" tB2TqFcLitle="source: imgur.com" /></a>
+ 
 3. **Network Check:**
    - **Observed Behavior:** I pivoted to the `DeviceProcessEvents` table to see if we could see anything that was suspicious around the time the port scan started. We noticed a PowerShell script named `portscan.ps1` launched at `2025-01-06T06:37:00.774381Z`.
-
-   **Detection Query (KQL):**
-```kql
-let VMName = "windows-target-1";
-let specificTime = datetime(2025-01-06T06:37:00.774381Z);
-DeviceProcessEvents
-| where Timestamp between ((specificTime - 10m) .. (specificTime + 10m))
-| where DeviceName == VMName
-| order by Timestamp desc
-| project Timestamp, FileName, InitiatingProcessCommandLine
-```
-![Screenshot 2025-01-13 161326](https://github.com/user-attachments/assets/ad26dcfb-2c43-4674-8a14-f926415d9ee6)
-
+<a href="https://imgur.com/DMWTeAZ"><img src="https://i.imgur.com//DMWTeAZ.png" tB2TqFcLitle="source: imgur.com" /></a>
 5. **Response:**
    - We observed the port scan script was launched by the SYSTEM account. This is not expected behavior and it is not something that was setup by the admins. I isolated the device and ran a malware scan. The malware scan produced no results, so out of caution, I kept the device isolated and put in a ticket to have it re-image/rebuilt. Shared findings with the manager, highlighting automated archive creation. Awaiting further instructions.
  
